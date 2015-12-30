@@ -7,8 +7,24 @@
 //
 
 #import "AppDelegate.h"
+#import "MyTabBarController.h"
+#import "GudiePageView.h"
+
+//凑提效果
+#import "MMDrawerController.h"
+#import "LEFTViewController.h"
+
+//支持QQ
+#import "UMSocialQQHandler.h"
+//支持微信
+#import "UMSocialWechatHandler.h"
+//支持sina
+#import "UMSocialSinaHandler.h"
 
 @interface AppDelegate ()
+
+@property (nonatomic, strong) MyTabBarController *myTabbar;
+@property (nonatomic, strong) GudiePageView *gudieView;
 
 @end
 
@@ -16,8 +32,91 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
+    
+    
+    self.myTabbar = [[MyTabBarController alloc]init];
+    
+    
+    LEFTViewController *leftVc = [[LEFTViewController alloc]init];
+    
+    MMDrawerController *drawerVC = [[MMDrawerController alloc]initWithCenterViewController:self.myTabbar leftDrawerViewController:leftVc];
+    
+//    设置抽屉打开和关闭的模式
+    drawerVC.openDrawerGestureModeMask = MMOpenDrawerGestureModeAll;
+    drawerVC.closeDrawerGestureModeMask = MMCloseDrawerGestureModeAll;
+    
+//    设置作业面打开之后的宽度
+    drawerVC.maximumLeftDrawerWidth = screen_w - 100;
+    
+    self.window.rootViewController = drawerVC;
+    
+    
+   //    修改状态栏的颜色，第二种方式(需要和plist一起用)，第一种方式在rootVC中。
+    //在plist文件中 View controller-based status bar appearance   -------NO
+    
+    //状态栏为白色
+    [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
+    
+    
+    //    添加引导页
+    [self createGudiePage];
+    
+    
+    //添加友盟分享
+    [self addUMShare];
+    
+    
+    
     return YES;
+}
+
+#pragma mark ----友盟分享
+
+-(void)addUMShare{
+
+    //注册友盟分享
+    [UMSocialData setAppKey:APPKEY];
+    
+    //设置QQ的appid,appkey和url
+    
+    [UMSocialQQHandler setQQWithAppId:@"1104908293" appKey:@"MnGtpPN5AiB6MNvj" url:nil];
+    //设置微信的appid,appsecret和url
+    [UMSocialWechatHandler setWXAppId:@"wx12b249bcbf753e87" appSecret:@"0a9cd00c48ee47a9b23119086bcd3b30" url:nil];
+    
+     //打开sina微博的sso开关
+    [UMSocialSinaHandler openSSOWithRedirectURL:nil];
+    
+    //隐藏未安装的客户端（主要针对qq和微信）
+    [UMSocialConfig hiddenNotInstallPlatforms:@[UMShareToQQ,UMShareToQzone,UMShareToWechatTimeline]];
+    
+
+}
+
+
+- (void)createGudiePage
+{
+    //单例
+    if (![[[NSUserDefaults standardUserDefaults]objectForKey:@"isRuned"]boolValue]) {
+        NSArray *imageArray = @[@"welcome1",@"welcome2",@"welcome3"];
+        self.gudieView = [[GudiePageView alloc]initWithFrame:self.window.bounds ImageArray:imageArray];
+        
+        [self.myTabbar.view addSubview:self.gudieView];
+        
+        
+//        第一次运行完成记录
+        [[NSUserDefaults standardUserDefaults]setObject:@YES forKey:@"isRuned"];
+    }
+    
+    [self.gudieView.GoInButton addTarget:self action:@selector(goinbuttonClick) forControlEvents:(UIControlEventTouchUpInside)];
+}
+
+
+
+
+
+- (void)goinbuttonClick
+{
+    [self.gudieView removeFromSuperview];
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
